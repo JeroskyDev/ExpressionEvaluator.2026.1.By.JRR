@@ -1,4 +1,6 @@
-﻿namespace ExpressionEvaluator.Core;
+﻿using System.Collections;
+
+namespace ExpressionEvaluator.Core;
 
 public class Evaluator
 {
@@ -99,11 +101,22 @@ public class Evaluator
             }
             else
             {
-                stack.Push(double.Parse(item.ToString()));
+                var number = item.ToString();
+                if (IsDigitOrDot(item))
+                {
+                    while (postfix.IndexOf(item) + 1 < postfix.Length && IsDigitOrDot(postfix[postfix.IndexOf(item) + 1]))
+                    {
+                        number += postfix[++postfix.IndexOf(item)];
+                    }
+                    stack.Push(double.Parse(number));
+                }
             }
         }
         return stack.Pop();
     }
 
     private static bool IsOperator(char item) => "+-*/^()".Contains(item);
+
+    //make it so it can parse numbers with more than one digit and decimal numbers
+    private static bool IsDigitOrDot(char item) => ".".Contains(item) || char.IsDigit(item);
 }
