@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 
+
 namespace ExpressionEvaluator.Core;
 
 public class Evaluator
@@ -70,6 +71,7 @@ public class Evaluator
                         wholeNumber += infix[i];
                         i++;
                     }
+                    i--;
                     postFix += wholeNumber + " "; //add a space after each number to separate them in the postfix expression, so we can use them properly.
                 }
                 else
