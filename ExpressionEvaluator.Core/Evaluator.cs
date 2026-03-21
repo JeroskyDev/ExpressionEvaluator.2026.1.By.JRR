@@ -6,6 +6,9 @@ public class Evaluator
 {
     public static double Evaluate(string infix)
     {
+        //1.modification:sanitize the input by removing all whitespace characters
+        infix = infix.Replace(" ", "");
+        /************************************************************************/
         var postfix = InfixToPostfix(infix);
         return EvaluatePostfix(postfix);
     }
@@ -14,8 +17,11 @@ public class Evaluator
     {
         var postFix = string.Empty;
         var stack = new Stack<char>();
-        foreach (var item in infix)
+        //2.modification: chang the loop to a normal for so we can access the index of the current character and check if the next character is a digit or a dot to handle multi-digit numbers and decimal numbers.
+        for (int i = 0; i < infix.Length; i++)
         {
+            char item = infix[i];
+        /************************************************************************/
             if (IsOperator(item))
             {
                 if (stack.Count == 0)
@@ -26,10 +32,11 @@ public class Evaluator
                 {
                     if (item == ')')
                     {
-                        do
+                        while (stack.Peek() != '(')
                         {
-                            postFix += stack.Pop();
-                        } while (stack.Peek() != '(');
+                            postFix += stack.Pop() + " ";
+                            Console.WriteLine(postFix);
+                        } 
                         stack.Pop();
                     }
                     else
@@ -40,7 +47,10 @@ public class Evaluator
                         }
                         else
                         {
-                            postFix += stack.Pop();
+                            while(stack.Count > 0 && stack.Peek() != '(' && PriorityStack(stack.Peek()) >= PriorityInfix(item))
+                            {
+                                postFix += stack.Pop() + " ";
+                            }
                             stack.Push(item);
                         }
                     }
@@ -48,15 +58,40 @@ public class Evaluator
             }
             else
             {
-                postFix += item;
+                //4.modification: change the way we handle numbers to handle multi-digit numbers and decimal numbers by checking if the current character is a digit or a dot and if the next character is also a digit or a dot and concatenating them until we reach a multiple-digit number and/or a decimal number.
+                var wholeNumber = string.Empty;
+                //postFix += item;
+                if (IsDigitOrDot(item) == true)
+                {
+                    wholeNumber += infix[i];
+                    i++;
+                    while (i < infix.Length && IsDigitOrDot(infix[i]))
+                    {
+                        wholeNumber += infix[i];
+                        i++;
+                    }
+                    postFix += wholeNumber + " "; //add a space after each number to separate them in the postfix expression, so we can use them properly.
+                }
+                else
+                {
+                    postFix += item + " ";
+                }
+                /************************************************************************/
             }
         }
         while (stack.Count > 0)
         {
-            postFix += stack.Pop();
+            //6. modification: make sure to pop the parentheses from the stack and not add them to the postfix expression.
+            var popped = stack.Pop();
+            if (popped != '(' && popped != ')')
+            {
+                postFix += popped + " ";
+            }
+            /*****************************************************************/
         }
         return postFix;
-    }
+    } 
+    
 
     private static int PriorityStack(char item) => item switch
     {
@@ -82,34 +117,30 @@ public class Evaluator
 
     private static double EvaluatePostfix(string postfix)
     {
+        //Console.WriteLine($"Postfix: {postfix}");
         var stack = new Stack<double>();
-        foreach (char item in postfix)
+        //5.modification: change the way we handle numbers in the postfix expression to handle multi-digit numbers and decimal numbers by splitting the postfix expression by spaces and checking if each item is an operator or a number.
+        var postFixArray = postfix.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        /************************************************************************/
+        foreach (var item in postFixArray)
         {
-            if (IsOperator(item))
+            if (item.Length == 1 && IsOperator(item[0]))
             {
                 var b = stack.Pop();
                 var a = stack.Pop();
                 stack.Push(item switch
                 {
-                    '+' => a + b,
-                    '-' => a - b,
-                    '*' => a * b,
-                    '/' => a / b,
-                    '^' => Math.Pow(a, b),
+                    "+" => a + b,
+                    "-" => a - b,
+                    "*" => a * b,
+                    "/" => a / b,
+                    "^" => Math.Pow(a, b),
                     _ => throw new Exception("Sintax error."),
                 });
             }
             else
             {
-                var number = item.ToString();
-                if (IsDigitOrDot(item))
-                {
-                    while (postfix.IndexOf(item) + 1 < postfix.Length && IsDigitOrDot(postfix[postfix.IndexOf(item) + 1]))
-                    {
-                        number += postfix[++postfix.IndexOf(item)];
-                    }
-                    stack.Push(double.Parse(number));
-                }
+                stack.Push(double.Parse(item));
             }
         }
         return stack.Pop();
@@ -117,6 +148,6 @@ public class Evaluator
 
     private static bool IsOperator(char item) => "+-*/^()".Contains(item);
 
-    //make it so it can parse numbers with more than one digit and decimal numbers
+    //3.modification: boolean method to check if the current character is a digit or a dot.
     private static bool IsDigitOrDot(char item) => ".".Contains(item) || char.IsDigit(item);
 }
